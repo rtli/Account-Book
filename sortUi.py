@@ -45,7 +45,7 @@ class sortUi(object):
         font.setWeight(75)
         self.second_line.setFont(font)
         self.second_line.setObjectName("second_line")
-        self.second_line.setPlaceholderText("Second")
+        self.second_line.setPlaceholderText("二级分类")
 
         self.first_line = QtWidgets.QLineEdit(Form)
         self.first_line.setGeometry(QtCore.QRect(250, 220, 151, 31))
@@ -56,7 +56,7 @@ class sortUi(object):
         font.setWeight(75)
         self.first_line.setFont(font)
         self.first_line.setObjectName("first_line")
-        self.first_line.setPlaceholderText("First")
+        self.first_line.setPlaceholderText("一级分类")
         self.first_add = QtWidgets.QPushButton(Form)
         self.first_add.setGeometry(QtCore.QRect(250, 320, 71, 61))
         font = QtGui.QFont()

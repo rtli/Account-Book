@@ -18,7 +18,7 @@ classifier = csvIssue.init_second_classifier()
 
 class Ui_Form(object):
     def setupUi(self, Form):
-        Form.setObjectName("Main Window")
+        Form.setObjectName("主界面")
         Form.resize(620, 420)
         Form.setMinimumSize(QtCore.QSize(620, 420))
         Form.setMaximumSize(QtCore.QSize(620, 420))
@@ -54,7 +54,7 @@ class Ui_Form(object):
         self.item_line.setText("")
         self.item_line.setObjectName("item_line")
         self.item_line.setMaxLength(10)
-        self.item_line.setPlaceholderText("Enter item here")
+        self.item_line.setPlaceholderText("在此输入品名")
         self.price_line = QtWidgets.QLineEdit(Form)
         self.price_line.setGeometry(QtCore.QRect(100, 230, 201, 31))
         font = QtGui.QFont()
@@ -67,7 +67,7 @@ class Ui_Form(object):
         validator = QRegExpValidator(regx, self.price_line)
         self.price_line.setValidator(validator)
         self.price_line.setMaxLength(13)
-        self.price_line.setPlaceholderText("Enter price here")
+        self.price_line.setPlaceholderText("在此输入价格")
         self.sort_line = QtWidgets.QComboBox(Form)
         self.sort_line.setGeometry(QtCore.QRect(100, 150, 201, 31))
         self.sort_line.setObjectName("sort_line")
@@ -154,8 +154,8 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "Main Window"))
-        #self.setWindowIcon(QtGui.QIcon('icon.png'))
+        Form.setWindowTitle(_translate("Form", "主界面"))
+        self.setWindowIcon(QtGui.QIcon('./image/icon.png'))
         self.submit_button.setText(_translate("Form", "提交"))
         self.item_label.setText(_translate("Form", "名称:"))
         self.sort_label.setText(_translate("Form", "分类:"))

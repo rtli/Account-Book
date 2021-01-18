@@ -1,12 +1,19 @@
 import pandas as pd
+import csvIssue
 from pyecharts.charts import Page, Sankey
 from pyecharts import options as opts
 from pyecharts.globals import ThemeType
 from datetime import datetime
 date = str(datetime.now().year)+"."+str(datetime.now().month)
 
-data = pd.read_csv('spending.csv', encoding='UTF-8', header=None)
-sort = pd.read_csv('classifier.csv', encoding='UTF-8', header=None)
+try:
+    data = pd.read_csv('spending.csv', encoding='UTF-8', header=None)
+    sort = pd.read_csv('classifier.csv', encoding='UTF-8', header=None)
+except:
+    csvIssue.init_first_classifier()
+    temp=csvIssue.get_last_line()
+    data = pd.read_csv('spending.csv', encoding='UTF-8', header=None)
+    sort = pd.read_csv('classifier.csv', encoding='UTF-8', header=None)
 nodes, links, first_sorted_sum, second_sorted_sum, classifier = [], [], {}, {}, {}
 
 
