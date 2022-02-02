@@ -11,12 +11,14 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QRegExp
 from PyQt5.QtGui import QRegExpValidator
-import csvIssue
 
-classifier = csvIssue.init_second_classifier()
+import constants
+import csv_handler
+
+classifier = csv_handler.init_second_classifier()
 
 
-class Ui_Form(object):
+class UiForm(object):
     def setupUi(self, Form):
         Form.setObjectName("主界面")
         Form.resize(620, 420)
@@ -75,7 +77,7 @@ class Ui_Form(object):
         self.sort_line.setObjectName("sort_line")
         if classifier:
             self.sort_line.addItem(classifier[0])
-            if len(classifier)>1:
+            if len(classifier) > 1:
                 self.sort_line.addItems(classifier[1:])
         self.item_label = QtWidgets.QLabel(Form)
         self.item_label.setGeometry(QtCore.QRect(20, 70, 61, 31))
@@ -111,12 +113,16 @@ class Ui_Form(object):
         font.setFamily("微软雅黑")
         font.setPointSize(14)
         self.tips_browser.setFont(font)
-        last_line = csvIssue.get_last_line()
+        last_line = csv_handler.get_last_line()
         if not last_line:
-                self.tips_browser.setText("记账记录为空!\n千里之行，始于足下。")
+            self.tips_browser.setText(constants.empty_record_msg)
         else:
             self.tips_browser.setText(
-            "最近一次记账: "+str(last_line[0])+" 金额: "+str(last_line[2])+"元")
+                constants.recent_msg.format(
+                    item=str(last_line[0]),
+                    price=str(last_line[2]),
+                )
+            )
         self.widget = QtWidgets.QWidget(Form)
         self.widget.setGeometry(QtCore.QRect(420, 280, 86, 111))
         self.widget.setObjectName("widget")
@@ -155,7 +161,7 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "主界面"))
-        self.setWindowIcon(QtGui.QIcon('./image/icon.png'))
+        self.setWindowIcon(QtGui.QIcon("./image/icon.png"))
         self.submit_button.setText(_translate("Form", "提交"))
         self.item_label.setText(_translate("Form", "名称:"))
         self.sort_label.setText(_translate("Form", "分类:"))
