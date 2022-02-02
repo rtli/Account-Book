@@ -56,17 +56,26 @@ class MyMainForm(QMainWindow, UiForm):
 
     def withdraw(self):
         res_code = QMessageBox.question(
-            self, "?", constants.confirm_withdraw_msg, QMessageBox.Yes | QMessageBox.No
+            self,
+            "?",
+            constants.confirm_withdraw_msg,
+            QMessageBox.Yes | QMessageBox.No,
         )
         if res_code != 65536:
             flag = csv_handler.delete_last_line()
             if flag:
                 QMessageBox.information(
-                    self, "Success", constants.success_delete_msg, QMessageBox.Ok
+                    self,
+                    "Success",
+                    constants.success_delete_msg,
+                    QMessageBox.Ok,
                 )
             else:
                 QMessageBox.information(
-                    self, "Success", constants.empty_msg, QMessageBox.Ok
+                    self,
+                    "Success",
+                    constants.empty_msg,
+                    QMessageBox.Ok,
                 )
             last_line = csv_handler.get_last_line()
             if not last_line:
@@ -98,11 +107,31 @@ class MySubForm(QDialog, sortUi):
         super(MySubForm, self).__init__(parent)
         self.setupUi(self)
 
-        self.first_add.clicked.connect(partial(self.add_classifier, "first"))
-        self.second_add.clicked.connect(partial(self.add_classifier, "second"))
+        self.first_add.clicked.connect(
+            partial(
+                self.add_classifier,
+                "first",
+            ),
+        )
+        self.second_add.clicked.connect(
+            partial(
+                self.add_classifier,
+                "second",
+            ),
+        )
 
-        self.first_delete.clicked.connect(partial(self.check_select, "first"))
-        self.second_delete.clicked.connect(partial(self.check_select, "second"))
+        self.first_delete.clicked.connect(
+            partial(
+                self.check_select,
+                "first",
+            ),
+        )
+        self.second_delete.clicked.connect(
+            partial(
+                self.check_select,
+                "second",
+            ),
+        )
 
     def add_classifier(self, name):
         if name == "second":
@@ -126,20 +155,31 @@ class MySubForm(QDialog, sortUi):
                 self.update_list()
             else:
                 QMessageBox.information(
-                    self, "Duplicated", constants.error_duplicated_msg, QMessageBox.Ok
+                    self,
+                    "Duplicated",
+                    constants.error_duplicated_msg,
+                    QMessageBox.Ok,
                 )
             self.first_line.clear()
             self.second_line.clear()
         else:
             QMessageBox.critical(
-                self, "Error", constants.error_invalid_params_msg, QMessageBox.Ok
+                self,
+                "Error",
+                constants.error_invalid_params_msg,
+                QMessageBox.Ok,
             )
 
     def check_select(self, name):
         if name == "first":
             items = [item.text() for item in self.first_classifier.selectedItems()]
             if not items:
-                QMessageBox.information(self, "?", "?", QMessageBox.Ok)
+                QMessageBox.information(
+                    self,
+                    "?",
+                    "?",
+                    QMessageBox.Ok,
+                )
                 return
         elif name == "second":
             items = [item.text() for item in self.second_classifier.selectedItems()]
@@ -165,7 +205,10 @@ class MySubForm(QDialog, sortUi):
 
     def delete_classifier(self, items):
         res_code = QMessageBox.question(
-            self, "?", constants.confirm_delete_msg, QMessageBox.Yes | QMessageBox.No
+            self,
+            "?",
+            constants.confirm_delete_msg,
+            QMessageBox.Yes | QMessageBox.No,
         )
         if res_code == 65536:
             return

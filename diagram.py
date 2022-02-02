@@ -12,14 +12,31 @@ date = str(datetime.now().year) + "." + str(datetime.now().month)
 
 
 try:
-    data = pd.read_csv(constants.spending_filename, encoding="UTF-8", header=None)
-    sort = pd.read_csv(constants.classifier_filename, encoding="UTF-8", header=None)
+    data = pd.read_csv(
+        constants.spending_filename,
+        encoding="UTF-8",
+        header=None,
+    )
+    sort = pd.read_csv(
+        constants.classifier_filename,
+        encoding="UTF-8",
+        header=None,
+    )
 except FileNotFoundError:
     csv_handler.init_first_classifier()
     temp = csv_handler.get_last_line()
-    data = pd.read_csv(constants.spending_filename, encoding="UTF-8", header=None)
-    sort = pd.read_csv(constants.classifier_filename, encoding="UTF-8", header=None)
-nodes, links, first_sorted_sum, second_sorted_sum, classifier = [], [], {}, {}, {}
+    data = pd.read_csv(
+        constants.spending_filename,
+        encoding="UTF-8",
+        header=None,
+    )
+    sort = pd.read_csv(
+        constants.classifier_filename,
+        encoding="UTF-8",
+        header=None,
+    )
+nodes, links = [], []
+first_sorted_sum, second_sorted_sum, classifier = {}, {}, {}
 
 
 def init_classifier():
@@ -57,7 +74,11 @@ def construct_nodes():
 
     for (key, value) in {**first_sorted_sum, **second_sorted_sum}.items():
         links.append(
-            {"source": key, "target": classifier[key], "value": round(value, 2)}
+            {
+                "source": key,
+                "target": classifier[key],
+                "value": round(value, 2),
+            }
         )
 
 
@@ -75,10 +96,19 @@ def Sankey_graph():
             "Ledger",
             nodes,
             links,
-            linestyle_opt=opts.LineStyleOpts(opacity=0.5, curve=0.5, color="source"),
+            linestyle_opt=opts.LineStyleOpts(
+                opacity=0.5,
+                curve=0.5,
+                color="source",
+            ),
             label_opts=opts.LabelOpts(position="right"),
         )
-        .set_global_opts(title_opts=opts.TitleOpts(title="The Ledger", subtitle=date))
+        .set_global_opts(
+            title_opts=opts.TitleOpts(
+                title="The Ledger",
+                subtitle=date,
+            )
+        )
     )
 
     c.render("result.html")

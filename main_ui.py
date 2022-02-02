@@ -12,6 +12,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QRegExp
 from PyQt5.QtGui import QRegExpValidator
 
+import constants
 import csv_handler
 
 classifier = csv_handler.init_second_classifier()
@@ -114,10 +115,13 @@ class UiForm(object):
         self.tips_browser.setFont(font)
         last_line = csv_handler.get_last_line()
         if not last_line:
-            self.tips_browser.setText("记账记录为空!\n千里之行，始于足下。")
+            self.tips_browser.setText(constants.empty_record_msg)
         else:
             self.tips_browser.setText(
-                "最近一次记账: " + str(last_line[0]) + " 金额: " + str(last_line[2]) + "元"
+                constants.recent_msg.format(
+                    item=str(last_line[0]),
+                    price=str(last_line[2]),
+                )
             )
         self.widget = QtWidgets.QWidget(Form)
         self.widget.setGeometry(QtCore.QRect(420, 280, 86, 111))

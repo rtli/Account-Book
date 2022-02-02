@@ -19,8 +19,18 @@ def init_second_classifier():
     else:
         with open("classifier.csv", "w", encoding="UTF-8", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([constants.second_classifier, constants.first_clasifier])
-            writer.writerow([constants.first_clasifier, constants.total_expenses])
+            writer.writerow(
+                [
+                    constants.second_classifier,
+                    constants.first_clasifier,
+                ],
+            )
+            writer.writerow(
+                [
+                    constants.first_clasifier,
+                    constants.total_expenses,
+                ],
+            )
             return [constants.second_classifier]
 
 
@@ -38,8 +48,18 @@ def init_first_classifier():
     else:
         with open("classifier.csv", "w", encoding="UTF-8", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([constants.second_classifier, constants.first_clasifier])
-            writer.writerow([constants.first_clasifier, constants.total_expenses])
+            writer.writerow(
+                [
+                    constants.second_classifier,
+                    constants.first_clasifier,
+                ],
+            )
+            writer.writerow(
+                [
+                    constants.first_clasifier,
+                    constants.total_expenses,
+                ],
+            )
             return [constants.first_clasifier]
 
 
@@ -54,14 +74,26 @@ def get_last_line():
     else:
         with open("spending.csv", "w", encoding="UTF-8", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([constants.example, constants.second_classifier, 100])
-            return [constants.example, constants.second_classifier, 100]
+            writer.writerow(
+                [
+                    constants.example,
+                    constants.second_classifier,
+                    100,
+                ],
+            )
+            return [
+                constants.example,
+                constants.second_classifier,
+                100,
+            ]
 
 
 def write_spending(item, sort, price):
     from datetime import datetime
 
-    item = str(datetime.now().month) + "." + str(datetime.now().day) + "-" + item
+    month = datetime.now().month
+    day = datetime.now().day
+    item = f"{str(month)}.{str(day)}-{item}"
     with open("spending.csv", "a", encoding="UTF-8", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([item, sort, price])
@@ -116,7 +148,12 @@ def delete_classifier(items):
             if row[0] not in items and row[1] not in items:
                 lines.append(row)
 
-    with open("classifier.csv", "w", encoding="UTF-8", newline="") as writeFile:
+    with open(
+        "classifier.csv",
+        "w",
+        encoding="UTF-8",
+        newline="",
+    ) as writeFile:
         writer = csv.writer(writeFile)
         writer.writerows(lines)
 
