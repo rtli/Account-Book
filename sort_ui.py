@@ -9,10 +9,12 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 import csv_handler
 
-second_classifier_list=csv_handler.init_second_classifier()
-first_classifier_list=csv_handler.init_first_classifier()
+second_classifier_list = csv_handler.init_second_classifier()
+first_classifier_list = csv_handler.init_first_classifier()
+
 
 class sortUi(object):
     def setupUi(self, Form):
