@@ -2,18 +2,19 @@ from datetime import datetime
 
 import pandas as pd
 from pyecharts import options as opts
-from pyecharts.charts import Page, Sankey
+from pyecharts.charts import Sankey
 from pyecharts.globals import ThemeType
 
+import constants
 import csv_handler
 
 date = str(datetime.now().year) + "." + str(datetime.now().month)
-import constants
+
 
 try:
     data = pd.read_csv(constants.spending_filename, encoding="UTF-8", header=None)
     sort = pd.read_csv(constants.classifier_filename, encoding="UTF-8", header=None)
-except:
+except FileNotFoundError:
     csv_handler.init_first_classifier()
     temp = csv_handler.get_last_line()
     data = pd.read_csv(constants.spending_filename, encoding="UTF-8", header=None)

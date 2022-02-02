@@ -38,7 +38,7 @@ class MyMainForm(QMainWindow, UiForm):
                 self.tips_browser.setText(
                     constants.recent_msg.format(item=item, price=price)
                 )
-            except:
+            except Exception:
                 self.response_Browser.setText(constants.error_msg)
         self.item_line.setText("")
         self.price_line.setText("")

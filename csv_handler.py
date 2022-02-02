@@ -13,9 +13,9 @@ def init_second_classifier():
             for row in rows:
                 if row[1] != constants.total_expenses:
                     c.add(row[0])
-        l = list(c)
-        l.sort(key=lambda x: len(x))
-        return l
+        classifier_list = list(c)
+        classifier_list.sort(key=lambda x: len(x))
+        return classifier_list
     else:
         with open("classifier.csv", "w", encoding="UTF-8", newline="") as f:
             writer = csv.writer(f)
@@ -32,9 +32,9 @@ def init_first_classifier():
             for row in rows:
                 if row[1] == constants.total_expenses:
                     c.add(row[0])
-        l = list(c)
-        l.sort(key=lambda x: len(x))
-        return l
+        classifier_list = list(c)
+        classifier_list.sort(key=lambda x: len(x))
+        return classifier_list
     else:
         with open("classifier.csv", "w", encoding="UTF-8", newline="") as f:
             writer = csv.writer(f)
