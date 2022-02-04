@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QDialog, QMainWindow, QMessageBox
 
 import constants
 import csv_handler
+from diagram import generate_diagram
 from main_ui import UiForm
 from sort_ui import sortUi
 
@@ -49,7 +50,7 @@ class MyMainForm(QMainWindow, UiForm):
         self.price_line.setText("")
 
     def generate(self):
-        os.system("python diagram.py")
+        generate_diagram()
         res_code = QMessageBox.question(
             self,
             constants.SUCCESS_GENERATE_MSG_HEAD,
