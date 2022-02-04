@@ -65,7 +65,7 @@ class UiForm(object):
         self.price_line.setFont(font)
         self.price_line.setText("")
         self.price_line.setObjectName("price_line")
-        regx = QRegExp("^[0-9]+(\.[0-9]{1,2})?$")
+        regx = QRegExp(r"^[0-9]+(\.[0-9]{1,2})?$")
         validator = QRegExpValidator(regx, self.price_line)
         self.price_line.setValidator(validator)
         self.price_line.setMaxLength(13)
