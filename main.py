@@ -26,20 +26,25 @@ class MyMainForm(QMainWindow, UiForm):
         sort = self.sort_line.currentText()
         price = self.price_line.text()
         if not item or not sort or not price:
-            self.response_Browser.setText(constants.tips_msg)
+            self.response_Browser.setText(constants.TIPS_MSG)
         else:
             try:
                 csv_handler.write_spending(item, sort, price)
                 self.response_Browser.setText(
-                    constants.success_write_msg.format(
-                        item=item, sort=sort, price=price
-                    )
+                    constants.SUCCESS_WRITE_MSG.format(
+                        item=item,
+                        sort=sort,
+                        price=price,
+                    ),
                 )
                 self.tips_browser.setText(
-                    constants.recent_msg.format(item=item, price=price)
+                    constants.RECENT_MSG.format(
+                        item=item,
+                        price=price,
+                    ),
                 )
             except Exception:
-                self.response_Browser.setText(constants.error_msg)
+                self.response_Browser.setText(constants.ERROR_MSG)
         self.item_line.setText("")
         self.price_line.setText("")
 
@@ -47,47 +52,47 @@ class MyMainForm(QMainWindow, UiForm):
         os.system("python diagram.py")
         res_code = QMessageBox.question(
             self,
-            constants.success_generate_msg_head,
-            constants.success_generate_msg_body,
+            constants.SUCCESS_GENERATE_MSG_HEAD,
+            constants.SUCCESS_GENERATE_MSG_BODY,
             QMessageBox.Yes | QMessageBox.No,
         )
-        if res_code != 65536:
-            os.startfile("result.html")
+        if res_code != constants.PYQT_NEGATIVE_CODE:
+            os.startfile(constants.RESULT_FILENAME)
 
     def withdraw(self):
         res_code = QMessageBox.question(
             self,
             "?",
-            constants.confirm_withdraw_msg,
+            constants.CONFIRM_WITHDRAW_MSG,
             QMessageBox.Yes | QMessageBox.No,
         )
-        if res_code != 65536:
+        if res_code != constants.PYQT_NEGATIVE_CODE:
             flag = csv_handler.delete_last_line()
             if flag:
                 QMessageBox.information(
                     self,
-                    "Success",
-                    constants.success_delete_msg,
+                    constants.SUCCESS_HEAD,
+                    constants.SUCCESS_DELETE_MSG,
                     QMessageBox.Ok,
                 )
             else:
                 QMessageBox.information(
                     self,
-                    "Success",
-                    constants.empty_msg,
+                    constants.SUCCESS_HEAD,
+                    constants.EMPTY_MSG,
                     QMessageBox.Ok,
                 )
             last_line = csv_handler.get_last_line()
             if not last_line:
-                self.tips_browser.setText(constants.empty_record_msg)
+                self.tips_browser.setText(constants.EMPTY_RECORD_MSG)
             else:
                 self.tips_browser.setText(
-                    constants.recent_record_msg.format(
+                    constants.RECENT_RECORD_MSG.format(
                         sort=str(last_line[0]),
                         price=str(
                             last_line[2],
                         ),
-                    )
+                    ),
                 )
             self.response_Browser.setText("")
 
@@ -110,54 +115,57 @@ class MySubForm(QDialog, sortUi):
         self.first_add.clicked.connect(
             partial(
                 self.add_classifier,
-                "first",
+                constants.FIRST,
             ),
         )
         self.second_add.clicked.connect(
             partial(
                 self.add_classifier,
-                "second",
+                constants.SECOND,
             ),
         )
 
         self.first_delete.clicked.connect(
             partial(
                 self.check_select,
-                "first",
+                constants.FIRST,
             ),
         )
         self.second_delete.clicked.connect(
             partial(
                 self.check_select,
-                "second",
+                constants.SECOND,
             ),
         )
 
     def add_classifier(self, name):
-        if name == "second":
+        if name == constants.SECOND:
             second = self.second_line.text()
             first = self.second_Box.currentText()
 
-        elif name == "first":
+        elif name == constants.FIRST:
             second = self.first_line.text()
             first = self.first_Box.currentText()
 
         else:
-            QMessageBox.critical(self, "Error", "Error!", QMessageBox.Ok)
+            QMessageBox.critical(self, constants.ERROR_HEAD, "Error!", QMessageBox.Ok)
             return
 
         if first and second:
             flag = csv_handler.update_classifier(second, first)
             if flag:
                 QMessageBox.information(
-                    self, "Success", constants.success_add_msg, QMessageBox.Ok
+                    self,
+                    constants.SUCCESS_HEAD,
+                    constants.SUCCESS_ADD_MSG,
+                    QMessageBox.Ok,
                 )
                 self.update_list()
             else:
                 QMessageBox.information(
                     self,
-                    "Duplicated",
-                    constants.error_duplicated_msg,
+                    constants.ERROR_DUPLICATED_HEAD,
+                    constants.ERROR_DUPLICATED_MSG,
                     QMessageBox.Ok,
                 )
             self.first_line.clear()
@@ -165,13 +173,13 @@ class MySubForm(QDialog, sortUi):
         else:
             QMessageBox.critical(
                 self,
-                "Error",
-                constants.error_invalid_params_msg,
+                constants.ERROR_HEAD,
+                constants.ERROR_INVALID_PARAMS_MSG,
                 QMessageBox.Ok,
             )
 
     def check_select(self, name):
-        if name == "first":
+        if name == constants.FIRST:
             items = [item.text() for item in self.first_classifier.selectedItems()]
             if not items:
                 QMessageBox.information(
@@ -181,7 +189,7 @@ class MySubForm(QDialog, sortUi):
                     QMessageBox.Ok,
                 )
                 return
-        elif name == "second":
+        elif name == constants.SECOND:
             items = [item.text() for item in self.second_classifier.selectedItems()]
             if not items:
                 QMessageBox.information(self, "?", "?", QMessageBox.Ok)
@@ -207,10 +215,10 @@ class MySubForm(QDialog, sortUi):
         res_code = QMessageBox.question(
             self,
             "?",
-            constants.confirm_delete_msg,
+            constants.CONFIRM_DELETE_MSG,
             QMessageBox.Yes | QMessageBox.No,
         )
-        if res_code == 65536:
+        if res_code == constants.PYQT_NEGATIVE_CODE:
             return
         else:
             flag = csv_handler.delete_classifier(items)
@@ -219,8 +227,8 @@ class MySubForm(QDialog, sortUi):
             else:
                 QMessageBox.critical(
                     self,
-                    "Error",
-                    constants.error_deleting_non_empty_classifier_msg,
+                    constants.ERROR_HEAD,
+                    constants.ERROR_DELETING_NON_EMPTY_CLASSIFIER_MSG,
                     QMessageBox.Ok,
                 )
 
