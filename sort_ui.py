@@ -140,6 +140,7 @@ class sortUi(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
+        self.setWindowIcon(QtGui.QIcon("./images/icon.png"))
         Form.setWindowTitle(_translate(constants.FORM, constants.FORM_EDIT_CLASSIFIER))
         self.first_add.setText(_translate(constants.FORM, constants.FORM_ADD))
         self.second_add.setText(_translate(constants.FORM, constants.FORM_ADD))

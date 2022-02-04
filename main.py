@@ -2,7 +2,7 @@ import os
 import sys
 from functools import partial
 
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QDialog, QMainWindow, QMessageBox
 
 import constants
@@ -10,6 +10,9 @@ import csv_handler
 from diagram import generate_diagram
 from main_ui import UiForm
 from sort_ui import sortUi
+
+QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
 
 class MyMainForm(QMainWindow, UiForm):

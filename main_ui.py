@@ -161,7 +161,7 @@ class UiForm(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate(constants.FORM, "主界面"))
-        self.setWindowIcon(QtGui.QIcon("./image/icon.png"))
+        self.setWindowIcon(QtGui.QIcon("./images/icon.png"))
         self.submit_button.setText(_translate(constants.FORM, "提交"))
         self.item_label.setText(_translate(constants.FORM, "名称:"))
         self.sort_label.setText(_translate(constants.FORM, "分类:"))
