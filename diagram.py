@@ -8,67 +8,87 @@ from pyecharts.globals import ThemeType
 import constants
 import csv_handler
 
-date = ".".join([str(datetime.now().year), str(datetime.now().month)])
+
+def read_csv():
+    try:
+        data = pd.read_csv(
+            constants.SPENDING_FILENAME,
+            encoding=constants.ENCODING,
+            header=None,
+        )
+        sort = pd.read_csv(
+            constants.CLASSIFIER_FILENAME,
+            encoding=constants.ENCODING,
+            header=None,
+        )
+    except FileNotFoundError:
+        csv_handler.init_first_classifier()
+        temp = csv_handler.get_last_line()
+        data = pd.read_csv(
+            constants.SPENDING_FILENAME,
+            encoding=constants.ENCODING,
+            header=None,
+        )
+        sort = pd.read_csv(
+            constants.CLASSIFIER_FILENAME,
+            encoding=constants.ENCODING,
+            header=None,
+        )
+    return data, sort
 
 
-try:
-    data = pd.read_csv(
-        constants.SPENDING_FILENAME,
-        encoding=constants.ENCODING,
-        header=None,
-    )
-    sort = pd.read_csv(
-        constants.CLASSIFIER_FILENAME,
-        encoding=constants.ENCODING,
-        header=None,
-    )
-except FileNotFoundError:
-    csv_handler.init_first_classifier()
-    temp = csv_handler.get_last_line()
-    data = pd.read_csv(
-        constants.SPENDING_FILENAME,
-        encoding=constants.ENCODING,
-        header=None,
-    )
-    sort = pd.read_csv(
-        constants.CLASSIFIER_FILENAME,
-        encoding=constants.ENCODING,
-        header=None,
-    )
-nodes, links = [], []
-first_sorted_sum, second_sorted_sum, classifier = {}, {}, {}
+def init_classifier(sort):
+    classifier = {}
+    for line in sort.values:
+        classifier[line[0]] = line[1]
+    return classifier
 
 
-def init_classifier():
-    for i in sort.values:
-        classifier[i[0]] = i[1]
-
-
-def init_nodes():
+def init_nodes(data, sort):
+    nodes = []
     for i in range(2):
         for j in data[i].unique():
             nodes.append({constants.NAME: j})
     for i in sort[1].unique():
         nodes.append({constants.NAME: i})
+    return nodes
 
 
-def construct_layers():
+def construct_first_sorted_sum(data):
+    first_sorted_sum = {}
     for i in data.values:
         first_sorted_sum[str(i[1])] = (
             round(i[2], 2)
             if str(i[1]) not in first_sorted_sum
             else first_sorted_sum[str(i[1])] + round(i[2], 2)
         )
+    return first_sorted_sum
 
+
+def construct_second_sorted_sum(classifier: dict, first_sorted_sum: dict):
+    second_sorted_sum = {}
     for (key, value) in first_sorted_sum.items():
         second_sorted_sum[classifier[key]] = (
             value
             if classifier[key] not in second_sorted_sum
             else second_sorted_sum[classifier[key]] + value
         )
+    return second_sorted_sum
 
 
-def construct_nodes():
+def construct_layers(data, classifier):
+    first_sorted_sum = construct_first_sorted_sum(data)
+    second_sorted_sum = construct_second_sorted_sum(classifier, first_sorted_sum)
+    return first_sorted_sum, second_sorted_sum
+
+
+def construct_nodes(
+    data,
+    classifier: dict,
+    first_sorted_sum: dict,
+    second_sorted_sum: dict,
+):
+    links = []
     for i in data.values:
         links.append(
             {
@@ -86,10 +106,15 @@ def construct_nodes():
                 constants.VALUE: round(value, 2),
             },
         )
+    return links
 
 
-def Sankey_graph():
-    c = (
+def generate_sankey_graph(
+    nodes: dict,
+    links: dict,
+):
+    date = ".".join([str(datetime.now().year), str(datetime.now().month)])
+    sankey_graph = (
         Sankey(
             init_opts=opts.InitOpts(
                 width=constants.SANKEY_WIDTH,
@@ -99,7 +124,7 @@ def Sankey_graph():
             ),
         )
         .add(
-            "Ledger",
+            constants.LEDGER,
             nodes,
             links,
             linestyle_opt=opts.LineStyleOpts(
@@ -111,22 +136,20 @@ def Sankey_graph():
         )
         .set_global_opts(
             title_opts=opts.TitleOpts(
-                title="The Ledger",
+                title=constants.LEDGER,
                 subtitle=date,
             ),
         )
     )
 
-    c.render(constants.RESULT_FILENAME)
+    sankey_graph.render(constants.RESULT_FILENAME)
 
 
-def main():
-    init_classifier()
-    init_nodes()
-    construct_layers()
-    construct_nodes()
-    Sankey_graph()
-
-
-if __name__ == "__main__":
-    main()
+def generate_diagram():
+    data, sort = read_csv()
+    classifier = init_classifier(sort)
+    nodes = init_nodes(data, sort)
+    first_sorted_sum, second_sorted_sum = construct_layers(data, classifier)
+    links = construct_nodes(data, classifier, first_sorted_sum, second_sorted_sum)
+    generate_sankey_graph(nodes, links)
+    return True
