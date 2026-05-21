@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import extract, func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from backend.database import get_db
 from backend.models import Category, Spending
@@ -17,6 +17,9 @@ from backend.schemas import (
 
 router = APIRouter(prefix="/api/statistics", tags=["statistics"])
 
+# Top N categories to show individually; rest grouped as "其他"
+TOP_N_CATEGORIES = 10
+
 
 @router.get("/sankey", response_model=SankeyResponse)
 def get_sankey_data(
@@ -24,64 +27,51 @@ def get_sankey_data(
     month: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
-    """Generate Sankey diagram data: item -> second_category -> first_category -> total."""
-    query = db.query(Spending)
+    """Generate Sankey diagram data: sub_category -> parent_category -> total.
 
-    if year:
+    Uses SQL-level aggregation instead of loading all records into memory.
+    Only 2 layers: second_category -> first_category -> 总支出.
+    """
+    ParentCategory = aliased(Category)
+
+    query = (
+        db.query(
+            Category.name.label("sub_cat"),
+            ParentCategory.name.label("parent_cat"),
+            func.sum(Spending.amount).label("total"),
+        )
+        .join(Category, Spending.category_id == Category.id)
+        .join(ParentCategory, Category.parent_id == ParentCategory.id)
+    )
+
+    if year is not None:
         query = query.filter(extract("year", Spending.spend_date) == year)
-    if month:
+    if month is not None:
         query = query.filter(extract("month", Spending.spend_date) == month)
 
-    spendings = query.all()
-    if not spendings:
+    results = query.group_by(Category.name, ParentCategory.name).all()
+
+    if not results:
         return SankeyResponse(nodes=[], links=[])
 
-    nodes_set = set()
-    links = []
+    nodes_set: set[str] = set()
+    links: list[SankeyLink] = []
 
-    # Layer 1: item -> second_category (level 2)
-    item_to_cat = {}
-    for s in spendings:
-        cat = s.category
-        if not cat:
-            continue
-        item_key = s.item_name
-        nodes_set.add(item_key)
-        nodes_set.add(cat.name)
+    # Layer 1: sub_category -> parent_category
+    parent_totals: dict[str, float] = {}
+    for row in results:
+        sub_cat, parent_cat, total = row.sub_cat, row.parent_cat, row.total
+        nodes_set.add(sub_cat)
+        nodes_set.add(parent_cat)
+        links.append(
+            SankeyLink(source=sub_cat, target=parent_cat, value=round(total, 2))
+        )
+        parent_totals[parent_cat] = parent_totals.get(parent_cat, 0) + total
 
-        key = (item_key, cat.name)
-        item_to_cat[key] = item_to_cat.get(key, 0) + s.amount
-
-    for (source, target), value in item_to_cat.items():
-        links.append(SankeyLink(source=source, target=target, value=round(value, 2)))
-
-    # Layer 2: second_category -> first_category (level 1)
-    cat2_to_cat1 = {}
-    for s in spendings:
-        cat = s.category
-        if not cat or not cat.parent:
-            continue
-        parent = cat.parent
-        nodes_set.add(parent.name)
-
-        key = (cat.name, parent.name)
-        cat2_to_cat1[key] = cat2_to_cat1.get(key, 0) + s.amount
-
-    for (source, target), value in cat2_to_cat1.items():
-        links.append(SankeyLink(source=source, target=target, value=round(value, 2)))
-
-    # Layer 3: first_category -> 总支出
-    cat1_totals = {}
-    for s in spendings:
-        cat = s.category
-        if not cat or not cat.parent:
-            continue
-        parent = cat.parent
-        cat1_totals[parent.name] = cat1_totals.get(parent.name, 0) + s.amount
-
-    if cat1_totals:
+    # Layer 2: parent_category -> 总支出
+    if parent_totals:
         nodes_set.add(C.TOTAL_EXPENSE)
-        for cat_name, value in cat1_totals.items():
+        for cat_name, value in parent_totals.items():
             links.append(
                 SankeyLink(
                     source=cat_name, target=C.TOTAL_EXPENSE, value=round(value, 2)
@@ -103,9 +93,8 @@ def get_monthly_summary(
         func.sum(Spending.amount).label("total"),
     )
 
-    if year:
+    if year is not None:
         query = query.filter(extract("year", Spending.spend_date) == year)
-
     results = query.group_by("month").order_by("month").all()
 
     return [MonthlySummary(month=r.month, total=round(r.total, 2)) for r in results]
@@ -115,21 +104,59 @@ def get_monthly_summary(
 def get_category_summary(
     year: Optional[int] = None,
     month: Optional[int] = None,
+    parent_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
-    """Get spending totals grouped by category."""
-    query = db.query(
-        Category.name,
-        func.sum(Spending.amount).label("total"),
-    ).join(Category, Spending.category_id == Category.id)
+    """Get spending totals grouped by category.
 
-    if year:
+    By default aggregates at first-level (parent) categories.
+    If parent_id is provided, shows sub-categories under that parent.
+    Results beyond TOP_N are grouped into "其他".
+    """
+    if parent_id:
+        # Drill-down: show sub-categories under a specific parent
+        query = db.query(
+            Category.name,
+            func.sum(Spending.amount).label("total"),
+        ).join(Category, Spending.category_id == Category.id).filter(
+            Category.parent_id == parent_id
+        )
+        group_col = Category.name
+    else:
+        # Default: aggregate at first-level (parent) categories
+        ParentCategory = aliased(Category)
+        query = (
+            db.query(
+                ParentCategory.name,
+                func.sum(Spending.amount).label("total"),
+            )
+            .join(Category, Spending.category_id == Category.id)
+            .join(ParentCategory, Category.parent_id == ParentCategory.id)
+        )
+        group_col = ParentCategory.name
+
+    if year is not None:
         query = query.filter(extract("year", Spending.spend_date) == year)
-    if month:
+    if month is not None:
         query = query.filter(extract("month", Spending.spend_date) == month)
 
     results = (
-        query.group_by(Category.name).order_by(func.sum(Spending.amount).desc()).all()
+        query.group_by(group_col)
+        .order_by(func.sum(Spending.amount).desc())
+        .all()
     )
 
-    return [CategorySummary(name=r.name, total=round(r.total, 2)) for r in results]
+    # Apply Top N grouping
+    summaries: list[CategorySummary] = []
+    other_total = 0.0
+
+    for i, r in enumerate(results):
+        if i < TOP_N_CATEGORIES:
+            summaries.append(CategorySummary(name=r.name, total=round(r.total, 2)))
+        else:
+            other_total += r.total
+
+    if other_total > 0:
+        summaries.append(CategorySummary(name="其他", total=round(other_total, 2)))
+
+    return summaries
