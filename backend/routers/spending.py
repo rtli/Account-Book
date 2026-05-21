@@ -16,6 +16,15 @@ from backend.schemas import (
 
 router = APIRouter(prefix="/api/spending", tags=["spending"])
 
+# Whitelist of sortable columns to prevent SQL injection via arbitrary field names.
+_SORTABLE_COLUMNS = {
+    "spend_date": Spending.spend_date,
+    "amount": Spending.amount,
+    "item_name": Spending.item_name,
+    "created_at": Spending.created_at,
+    "id": Spending.id,
+}
+
 
 def _to_response(s: Spending) -> SpendingResponse:
     return SpendingResponse(
@@ -37,6 +46,8 @@ def list_spendings(
     category_id: Optional[int] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    sort_by: str = Query("spend_date"),
+    order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
 ):
     query = db.query(Spending)
@@ -50,9 +61,16 @@ def list_spendings(
     if end_date:
         query = query.filter(Spending.spend_date <= end_date)
 
+    sort_column = _SORTABLE_COLUMNS.get(sort_by, Spending.spend_date)
+    primary = sort_column.asc() if order == "asc" else sort_column.desc()
+    # Always tie-break by id desc to keep pagination stable across equal values.
+    order_clauses = (
+        [primary] if sort_by == "id" else [primary, Spending.id.desc()]
+    )
+
     total = query.count()
     items = (
-        query.order_by(Spending.spend_date.desc(), Spending.id.desc())
+        query.order_by(*order_clauses)
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()

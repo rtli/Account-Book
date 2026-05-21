@@ -2,11 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Card, Table, Input, Select, DatePicker, Space, Button, Tag, Popconfirm, message, Modal, Form, InputNumber,
 } from 'antd';
+import type { TablePaginationConfig } from 'antd';
+import type { ColumnsType, SorterResult } from 'antd/es/table/interface';
 import { SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { spendingApi, categoryApi, type Spending, type Category } from '../services/api';
 
 const { RangePicker } = DatePicker;
+
+type SortOrder = 'asc' | 'desc';
+const DEFAULT_SORT_BY = 'spend_date';
+const DEFAULT_SORT_ORDER: SortOrder = 'desc';
 
 export default function RecordsPage() {
   const [data, setData] = useState<Spending[]>([]);
@@ -18,6 +24,8 @@ export default function RecordsPage() {
   const [keyword, setKeyword] = useState('');
   const [categoryId, setCategoryId] = useState<number | undefined>();
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
+  const [sortBy, setSortBy] = useState<string>(DEFAULT_SORT_BY);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(DEFAULT_SORT_ORDER);
   const [editModal, setEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Spending | null>(null);
   const [editForm] = Form.useForm();
@@ -39,12 +47,14 @@ export default function RecordsPage() {
         category_id: categoryId,
         start_date: dateRange?.[0],
         end_date: dateRange?.[1],
+        sort_by: sortBy,
+        order: sortOrder,
       });
       setData(res.data.items);
       setTotal(res.data.total);
     } catch { /* ignore */ }
     setLoading(false);
-  }, [page, pageSize, keyword, categoryId, dateRange]);
+  }, [page, pageSize, keyword, categoryId, dateRange, sortBy, sortOrder]);
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
   useEffect(() => { loadData(); }, [loadData]);
@@ -84,8 +94,12 @@ export default function RecordsPage() {
     }
   };
 
-  const columns = [
-    { title: '品名', dataIndex: 'item_name', key: 'item_name' },
+  const columns: ColumnsType<Spending> = [
+    {
+      title: '品名', dataIndex: 'item_name', key: 'item_name',
+      sorter: true,
+      sortOrder: sortBy === 'item_name' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+    },
     {
       title: '分类', dataIndex: 'category_name', key: 'category_name',
       render: (text: string) => <Tag color="blue">{text}</Tag>,
@@ -93,9 +107,15 @@ export default function RecordsPage() {
     {
       title: '金额', dataIndex: 'amount', key: 'amount',
       render: (val: number) => <span style={{ color: '#f5222d', fontWeight: 500 }}>¥{val.toFixed(2)}</span>,
-      sorter: (a: Spending, b: Spending) => a.amount - b.amount,
+      sorter: true,
+      sortOrder: sortBy === 'amount' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
     },
-    { title: '日期', dataIndex: 'spend_date', key: 'spend_date' },
+    {
+      title: '日期', dataIndex: 'spend_date', key: 'spend_date',
+      sorter: true,
+      sortOrder: sortBy === 'spend_date' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      defaultSortOrder: 'descend' as const,
+    },
     {
       title: '操作', key: 'action', width: 120,
       render: (_: any, record: Spending) => (
@@ -108,6 +128,38 @@ export default function RecordsPage() {
       ),
     },
   ];
+
+  const handleTableChange = (
+    pagination: TablePaginationConfig,
+    _filters: Record<string, unknown>,
+    sorter: SorterResult<Spending> | SorterResult<Spending>[],
+  ) => {
+    const next = Array.isArray(sorter) ? sorter[0] : sorter;
+    const rawOrder = next?.order;
+
+    // Third click on a column header clears the sort; fall back to the default
+    // sort so the user can always return to the initial state via UI.
+    if (!rawOrder) {
+      if (sortBy !== DEFAULT_SORT_BY || sortOrder !== DEFAULT_SORT_ORDER) {
+        setSortBy(DEFAULT_SORT_BY);
+        setSortOrder(DEFAULT_SORT_ORDER);
+        setPage(1);
+      }
+      return;
+    }
+
+    const nextSortBy = (next?.field as string) || DEFAULT_SORT_BY;
+    const nextSortOrder: SortOrder = rawOrder === 'ascend' ? 'asc' : 'desc';
+    // Reset to page 1 when sort changes so the user sees the new top of the dataset.
+    if (nextSortBy !== sortBy || nextSortOrder !== sortOrder) {
+      setSortBy(nextSortBy);
+      setSortOrder(nextSortOrder);
+      setPage(1);
+      return;
+    }
+    if (pagination.current) setPage(pagination.current);
+    if (pagination.pageSize) setPageSize(pagination.pageSize);
+  };
 
   return (
     <Card title="账目列表">
@@ -125,10 +177,10 @@ export default function RecordsPage() {
       </Space>
 
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading}
+        onChange={handleTableChange}
         pagination={{
           current: page, pageSize, total, showSizeChanger: true,
           showTotal: (t) => `共 ${t} 条`,
-          onChange: (p, ps) => { setPage(p); setPageSize(ps); },
         }} />
 
       <Modal title="编辑账目" open={editModal} onOk={handleEditSubmit}

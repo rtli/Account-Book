@@ -79,6 +79,19 @@ def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
     return category
 
 
+@router.delete("/clear", status_code=200)
+def clear_all_categories(db: Session = Depends(get_db)):
+    """Delete all categories and their associated spending records."""
+    spending_count = db.query(Spending).count()
+    db.query(Spending).delete()
+    category_count = db.query(Category).filter(Category.level == 2).count()
+    db.query(Category).filter(Category.level == 2).delete()
+    category_count += db.query(Category).filter(Category.level == 1).count()
+    db.query(Category).filter(Category.level == 1).delete()
+    db.commit()
+    return {"deleted_categories": category_count, "deleted_spendings": spending_count}
+
+
 @router.delete("/{category_id}", status_code=204)
 def delete_category(category_id: int, db: Session = Depends(get_db)):
     category = db.query(Category).filter(Category.id == category_id).first()
@@ -163,6 +176,7 @@ async def import_categories(
 
         second_cat = Category(name=second_name, level=2, parent_id=first_cat.id)
         db.add(second_cat)
+        db.flush()
         imported += 1
 
     db.commit()

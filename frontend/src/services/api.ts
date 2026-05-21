@@ -61,6 +61,8 @@ export const spendingApi = {
     category_id?: number;
     start_date?: string;
     end_date?: string;
+    sort_by?: string;
+    order?: 'asc' | 'desc';
   }) => api.get<SpendingList>('/spending', { params }),
 
   create: (data: {
@@ -87,6 +89,7 @@ export const categoryApi = {
   create: (data: { name: string; parent_id?: number; level?: number }) =>
     api.post<Category>('/category', data),
   delete: (id: number) => api.delete(`/category/${id}`),
+  clearAll: () => api.delete<{ deleted_categories: number; deleted_spendings: number }>('/category/clear'),
   importCsv: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -102,7 +105,7 @@ export const statisticsApi = {
     api.get<SankeyData>('/statistics/sankey', { params }),
   monthly: (params?: { year?: number }) =>
     api.get<MonthlySummary[]>('/statistics/monthly', { params }),
-  categorySummary: (params?: { year?: number; month?: number }) =>
+  categorySummary: (params?: { year?: number; month?: number; parent_id?: number }) =>
     api.get<CategorySummary[]>('/statistics/category-summary', { params }),
 };
 
@@ -116,6 +119,7 @@ export const dataApi = {
     });
   },
   exportCsv: () => api.get('/data/export', { responseType: 'blob' }),
+  clearAll: () => api.delete<{ deleted: number }>('/data/clear'),
 };
 
 export default api;
