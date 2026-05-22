@@ -1,0 +1,365 @@
+/* ========================================================================
+   Ledger — Precision
+   modern, neutral, software-feeling. Linear / Vercel / Raycast lineage.
+   ======================================================================== */
+
+:root {
+  /* Surface scale */
+  --bg:           #fafafa;
+  --surface:      #ffffff;
+  --surface-2:    #f5f5f5;
+  --surface-3:    #fafafa;
+
+  /* Foreground scale */
+  --fg:           #0a0a0a;
+  --fg-2:         #525252;
+  --fg-3:         #a3a3a3;
+  --fg-4:         #d4d4d4;
+
+  /* Border scale */
+  --border:       #e5e5e5;
+  --border-soft:  #f0f0f0;
+  --border-strong:#d4d4d4;
+
+  /* Brand accent — emerald, used sparingly */
+  --accent:       #16a34a;
+  --accent-hover: #15803d;
+  --accent-soft:  #dcfce7;
+  --accent-bg:    #f0fdf4;
+
+  /* Semantic */
+  --danger:       #dc2626;
+  --danger-soft:  #fef2f2;
+  --warning:      #f59e0b;
+
+  /* Effects */
+  --ring:         rgba(10, 10, 10, 0.10);
+  --shadow-xs:    0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg:    0 12px 32px -8px rgba(0, 0, 0, 0.10), 0 4px 8px -4px rgba(0, 0, 0, 0.04);
+
+  /* Geometry */
+  --radius-sm:    6px;
+  --radius:       8px;
+  --radius-lg:    12px;
+  --radius-xl:    16px;
+
+  /* Type */
+  --sans: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC',
+          'Hiragino Sans GB', 'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'JetBrains Mono', 'SF Mono',
+          'Menlo', 'Consolas', monospace;
+
+  /* Motion */
+  --ease:     cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast:   120ms;
+  --t-base:   180ms;
+}
+
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-feature-settings: 'cv11' 1, 'ss01' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  margin: 0;
+}
+
+::selection { background: var(--accent-soft); color: var(--accent-hover); }
+
+/* ---------- Tabular numbers wherever numbers live ---------- */
+.ant-table-cell,
+.ant-statistic-content,
+.ant-input-number-input,
+.ant-picker-input > input,
+.ledger-num,
+.ledger-amount,
+[data-num] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.ledger-amount {
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Scrollbars: invisible until needed ---------- */
+*::-webkit-scrollbar       { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+*:hover::-webkit-scrollbar-thumb { background: var(--border-strong); background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--fg-3) !important; background-clip: content-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- Card: soft elevation + hover lift ---------- */
+.ant-card {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-xs) !important;
+  transition: border-color var(--t-base) var(--ease),
+              box-shadow var(--t-base) var(--ease) !important;
+}
+.ant-card .ant-card-head {
+  border-bottom: 1px solid var(--border-soft);
+  min-height: 52px;
+  padding: 0 20px;
+}
+.ant-card .ant-card-head-title {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  padding: 14px 0;
+}
+.ant-card .ant-card-body { padding: 20px; }
+
+/* ---------- Table: software list, not a ledger ---------- */
+.ant-table-thead > tr > th {
+  background: var(--surface-3) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-family: var(--sans) !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  letter-spacing: 0;
+  color: var(--fg-2) !important;
+  padding: 10px 14px !important;
+}
+.ant-table-thead > tr > th::before { display: none !important; }
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-soft) !important;
+  padding: 12px 14px !important;
+  transition: background var(--t-fast) var(--ease) !important;
+}
+.ant-table-tbody > tr:hover > td {
+  background: var(--surface-3) !important;
+}
+.ant-table-wrapper .ant-table {
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+}
+
+/* ---------- Tag: pill, soft fill ---------- */
+.ant-tag {
+  border: 1px solid var(--border) !important;
+  background: var(--surface-3) !important;
+  color: var(--fg) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 1px 8px;
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0;
+  line-height: 18px;
+  font-weight: 500;
+}
+.ant-tag-blue {
+  color: var(--accent-hover) !important;
+  background: var(--accent-bg) !important;
+  border-color: var(--accent-soft) !important;
+}
+
+/* ---------- Buttons: soft, modern, with motion ---------- */
+.ant-btn {
+  border-radius: var(--radius) !important;
+  font-weight: 500;
+  letter-spacing: 0;
+  box-shadow: none !important;
+  transition: background var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease),
+              transform var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease) !important;
+}
+.ant-btn-primary {
+  background: var(--fg) !important;
+  border-color: var(--fg) !important;
+  color: #ffffff !important;
+}
+.ant-btn-primary:not(:disabled):hover {
+  background: #1f1f1f !important;
+  border-color: #1f1f1f !important;
+  box-shadow: var(--shadow-sm) !important;
+  transform: translateY(-1px);
+}
+.ant-btn-primary:not(:disabled):active { transform: translateY(0); }
+
+.ant-btn-default {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--fg) !important;
+}
+.ant-btn-default:not(:disabled):hover {
+  background: var(--surface-3) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--fg) !important;
+}
+.ant-btn-link { color: var(--fg) !important; }
+.ant-btn-link:hover { color: var(--fg-2) !important; }
+.ant-btn-link.ant-btn-dangerous { color: var(--danger) !important; }
+.ant-btn-link.ant-btn-dangerous:hover { color: #b91c1c !important; }
+
+/* ---------- Inputs: soft focus ring ---------- */
+.ant-input,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector {
+  border-radius: var(--radius) !important;
+  border-color: var(--border) !important;
+  transition: border-color var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease) !important;
+}
+.ant-input:hover,
+.ant-input-number:hover,
+.ant-picker:hover,
+.ant-select:hover .ant-select-selector {
+  border-color: var(--border-strong) !important;
+}
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-number-focused,
+.ant-picker-focused,
+.ant-select-focused .ant-select-selector {
+  border-color: var(--fg) !important;
+  box-shadow: 0 0 0 3px var(--ring) !important;
+}
+
+/* ---------- Form labels: clean, lowercase ---------- */
+.ant-form-item-label > label {
+  color: var(--fg-2) !important;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* ---------- Menu: soft selection + accent indicator ---------- */
+.ant-menu-light.ant-menu-inline {
+  background: transparent !important;
+  border-inline-end: none !important;
+}
+.ant-menu-light .ant-menu-item {
+  position: relative;
+  border-radius: var(--radius) !important;
+  margin-inline: 12px !important;
+  margin-block: 2px !important;
+  width: calc(100% - 24px);
+  padding-inline: 12px !important;
+  height: 36px;
+  line-height: 36px;
+  font-weight: 500;
+  font-size: 13.5px;
+  color: var(--fg-2) !important;
+  transition: background var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease) !important;
+}
+.ant-menu-light .ant-menu-item a { color: inherit !important; }
+.ant-menu-light .ant-menu-item .anticon { color: var(--fg-3); transition: color var(--t-fast) var(--ease); }
+.ant-menu-light .ant-menu-item:hover {
+  background: var(--surface-2) !important;
+  color: var(--fg) !important;
+}
+.ant-menu-light .ant-menu-item:hover .anticon { color: var(--fg-2); }
+.ant-menu-light .ant-menu-item-selected {
+  background: var(--surface-2) !important;
+  color: var(--fg) !important;
+}
+.ant-menu-light .ant-menu-item-selected a { color: var(--fg) !important; }
+.ant-menu-light .ant-menu-item-selected .anticon { color: var(--fg) !important; }
+/* accent indicator slides in on selection */
+.ant-menu-light .ant-menu-item::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  height: 0;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  transition: height var(--t-base) var(--ease-out);
+}
+.ant-menu-light .ant-menu-item-selected::before { height: 16px; }
+.ant-menu-light .ant-menu-item-selected::after { display: none !important; }
+
+/* ---------- Tabs: subtle, modern ---------- */
+.ant-tabs-tab { font-family: var(--sans); padding: 10px 0 !important; }
+.ant-tabs-tab + .ant-tabs-tab { margin-left: 24px !important; }
+.ant-tabs-tab .ant-tabs-tab-btn { font-weight: 500; color: var(--fg-2); transition: color var(--t-fast) var(--ease); }
+.ant-tabs-tab:hover .ant-tabs-tab-btn { color: var(--fg); }
+.ant-tabs-tab-active .ant-tabs-tab-btn { font-weight: 600; color: var(--fg) !important; }
+.ant-tabs-ink-bar { background: var(--fg) !important; height: 2px !important; border-radius: 2px; }
+.ant-tabs-top > .ant-tabs-nav::before { border-bottom-color: var(--border-soft) !important; }
+
+/* ---------- Layout content shell ---------- */
+.ledger-content {
+  background: transparent;
+  margin: 0;
+  padding: 32px 40px;
+  border-radius: 0;
+  overflow: auto;
+  min-height: 100vh;
+}
+
+/* ---------- Modal ---------- */
+.ant-modal-content {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 24px !important;
+}
+.ant-modal-header { border-bottom: 1px solid var(--border-soft); padding-bottom: 16px; margin-bottom: 16px !important; }
+.ant-modal-title { font-family: var(--sans); font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
+
+/* ---------- Pagination ---------- */
+.ant-pagination .ant-pagination-item {
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--border) !important;
+  font-weight: 500;
+}
+.ant-pagination .ant-pagination-item:hover { border-color: var(--border-strong) !important; }
+.ant-pagination .ant-pagination-item-active {
+  border-color: var(--fg) !important;
+  background: var(--fg) !important;
+}
+.ant-pagination .ant-pagination-item-active a { color: #ffffff !important; }
+
+/* ---------- KBD: keyboard hint ---------- */
+.ledger-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+/* ---------- Status dot ---------- */
+.ledger-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}

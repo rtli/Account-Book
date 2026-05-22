@@ -74,7 +74,11 @@ export default function HomePage() {
       title: '金额',
       dataIndex: 'amount',
       key: 'amount',
-      render: (val: number) => <span style={{ color: '#f5222d', fontWeight: 500 }}>¥{val.toFixed(2)}</span>,
+      render: (val: number) => (
+        <span className="ledger-amount" style={{ color: 'var(--danger)', fontSize: 13.5 }}>
+          ¥{val.toFixed(2)}
+        </span>
+      ),
     },
     { title: '日期', dataIndex: 'spend_date', key: 'spend_date' },
     {
@@ -89,7 +93,22 @@ export default function HomePage() {
   ];
 
   return (
-    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+    <div>
+      <header style={{ marginBottom: 28, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            记一笔
+          </h1>
+          <p style={{ marginTop: 6, marginBottom: 0, color: 'var(--fg-2)', fontSize: 14 }}>
+            快速录入一条支出，右侧为最近 10 条记录。
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg-3)', fontSize: 12 }}>
+          <span>提交</span>
+          <span className="ledger-kbd">↵</span>
+        </div>
+      </header>
+      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
       <Card title="快速记账" style={{ flex: '1 1 360px', minWidth: 360 }}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}
           initialValues={{ spend_date: dayjs() }}>
@@ -120,6 +139,7 @@ export default function HomePage() {
         <Table columns={columns} dataSource={recentItems} rowKey="id"
           loading={loading} pagination={false} size="middle" />
       </Card>
+      </div>
     </div>
   );
 }
