@@ -26,19 +26,35 @@ const VIEWPORT_HEIGHT = 600;
 const ZOOM_STEP = 0.25;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 3;
+// Pie chart: aggregate categories whose share is below this threshold into "其他"
+const PIE_OTHER_THRESHOLD = 0.03;
 
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}月` }));
 
 export default function StatisticsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const incomingState = location.state as { year?: number; month?: number; parent?: string | null } | null;
+  const incomingState = location.state as {
+    year?: number;
+    month?: number;
+    parent?: string | null;
+    pieParent?: { id: number; name: string } | null;
+    tab?: string;
+  } | null;
   const [year, setYear] = useState<number>(incomingState?.year ?? dayjs().year());
   const [month, setMonth] = useState<number | undefined>(incomingState?.month ?? undefined);
   const [sankeyData, setSankeyData] = useState<SankeyData>({ nodes: [], links: [] });
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
   const [categoryData, setCategoryData] = useState<CategorySummary[]>([]);
   const [subCategories, setSubCategories] = useState<Category[]>([]);
+  const [parentCategories, setParentCategories] = useState<Category[]>([]);
+  // Pie drill-down: when clicking a first-level slice, show its sub-categories
+  const [pieDrillParent, setPieDrillParent] = useState<{ id: number; name: string } | null>(
+    incomingState?.pieParent ?? null
+  );
+  const [pieDrillData, setPieDrillData] = useState<CategorySummary[]>([]);
+  const [pieDrillLoading, setPieDrillLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(incomingState?.tab ?? 'sankey');
   const [loading, setLoading] = useState({ sankey: false, monthly: false, category: false });
   const [sankeyZoom, setSankeyZoom] = useState(1);
   const [selectedParent, setSelectedParent] = useState<string | null>(null);
@@ -55,13 +71,18 @@ export default function StatisticsPage() {
 
   useEffect(() => {
     categoryApi.list()
-      .then((res) => setSubCategories(res.data.filter((c) => c.level === 2)))
+      .then((res) => {
+        setSubCategories(res.data.filter((c) => c.level === 2));
+        setParentCategories(res.data.filter((c) => c.level === 1));
+      })
       .catch(() => { /* ignore */ });
   }, []);
 
   const fetchSankeyAndCategory = useCallback(async () => {
     setSelectedParent(null);
     setSankeyZoom(1);
+    // Note: pieDrillParent is intentionally not reset here so that year/month
+    // changes (or returning from records page) keep the user in the same drilled view.
     setLoading((prev) => ({ ...prev, sankey: true, category: true }));
     try {
       const [sankeyRes, categoryRes] = await Promise.all([
@@ -76,6 +97,19 @@ export default function StatisticsPage() {
       setLoading((prev) => ({ ...prev, sankey: false, category: false }));
     }
   }, [year, month]);
+
+  // Fetch sub-category breakdown when drilling into a pie slice
+  useEffect(() => {
+    if (!pieDrillParent) {
+      setPieDrillData([]);
+      return;
+    }
+    setPieDrillLoading(true);
+    statisticsApi.categorySummary({ year, month, parent_id: pieDrillParent.id })
+      .then((res) => setPieDrillData(res.data))
+      .catch(() => message.error('加载二级分类数据失败'))
+      .finally(() => setPieDrillLoading(false));
+  }, [pieDrillParent, year, month]);
 
   const fetchMonthly = useCallback(async () => {
     setLoading((prev) => ({ ...prev, monthly: true }));
@@ -210,7 +244,7 @@ export default function StatisticsPage() {
           end_date: end,
         });
         navigate(`/records?${qs.toString()}`, {
-          state: { from: 'statistics', year, month, parent: selectedParent },
+          state: { from: 'statistics', year, month, parent: selectedParent, tab: 'sankey' },
         });
         return;
       }
@@ -239,8 +273,82 @@ export default function StatisticsPage() {
     }],
   };
 
-  const pieOption = {
-    tooltip: { trigger: 'item', formatter: '{b}: ¥{c} ({d}%)' },
+  const pieData = useMemo(() => {
+    const source = pieDrillParent ? pieDrillData : categoryData;
+    const total = source.reduce((s, c) => s + c.total, 0);
+    if (total === 0) return [] as { name: string; value: number }[];
+    const threshold = total * PIE_OTHER_THRESHOLD;
+    const main: { name: string; value: number }[] = [];
+    let otherValue = 0;
+    for (const c of source) {
+      if (c.name === '其他' || c.total < threshold) {
+        otherValue += c.total;
+      } else {
+        main.push({ name: c.name, value: c.total });
+      }
+    }
+    if (otherValue > 0) {
+      main.push({ name: '其他', value: Number(otherValue.toFixed(2)) });
+    }
+    return main;
+  }, [categoryData, pieDrillData, pieDrillParent]);
+
+  const onPieEvents = useMemo(() => ({
+    click: (params: { seriesType?: string; name: string }) => {
+      if (params.seriesType !== 'pie') return;
+      if (params.name === '其他') return; // aggregated bucket has no single id
+
+      // Drilled view: clicking a sub-category jumps to records page
+      if (pieDrillParent) {
+        const cat = subCategories.find((c) => c.name === params.name);
+        if (!cat) {
+          message.warning('未找到该二级分类，可能数据未同步');
+          return;
+        }
+        const { start, end } = getDateRange();
+        const qs = new URLSearchParams({
+          category_id: String(cat.id),
+          start_date: start,
+          end_date: end,
+        });
+        navigate(`/records?${qs.toString()}`, {
+          state: {
+            from: 'statistics',
+            year,
+            month,
+            parent: selectedParent,
+            pieParent: pieDrillParent,
+            tab: 'category',
+          },
+        });
+        return;
+      }
+
+      // Top view: drill into sub-categories
+      const cat = parentCategories.find((c) => c.name === params.name);
+      if (!cat) {
+        message.warning('未找到该一级分类，可能数据未同步');
+        return;
+      }
+      setPieDrillParent({ id: cat.id, name: cat.name });
+    },
+  }), [pieDrillParent, parentCategories, subCategories, getDateRange, navigate, year, month, selectedParent]);
+
+  const pieOption = useMemo(() => ({
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: { name: string; value: number; percent: number }) => {
+        let hint = '';
+        if (params.name !== '其他') {
+          if (!pieDrillParent && parentCategories.some((c) => c.name === params.name)) {
+            hint = '<br/><span style="color:#1677ff;font-size:11px">点击查看二级分类</span>';
+          } else if (pieDrillParent && subCategories.some((c) => c.name === params.name)) {
+            hint = '<br/><span style="color:#1677ff;font-size:11px">点击查看账目</span>';
+          }
+        }
+        return `${params.name}: ¥${params.value} (${params.percent}%)${hint}`;
+      },
+    },
     legend: {
       orient: 'vertical',
       left: 'left',
@@ -259,9 +367,9 @@ export default function StatisticsPage() {
           `${params.name}\n¥${params.value} (${params.percent}%)`,
         fontSize: 12,
       },
-      data: categoryData.map((c) => ({ name: c.name, value: c.total })),
+      data: pieData,
     }],
-  };
+  }), [pieData, pieDrillParent, parentCategories, subCategories]);
 
   const months = MONTH_OPTIONS;
 
@@ -323,9 +431,30 @@ export default function StatisticsPage() {
       key: 'category',
       label: '分类占比',
       children: (
-        <Spin spinning={loading.category}>
-          {categoryData.length > 0 ? (
-            <ReactECharts option={pieOption} style={{ height: 500 }} />
+        <Spin spinning={loading.category || pieDrillLoading}>
+          {pieData.length > 0 ? (
+            <div>
+              <Space style={{ marginBottom: 8 }} align="center">
+                {pieDrillParent ? (
+                  <>
+                    <Button icon={<ArrowLeftOutlined />} size="small"
+                      onClick={() => setPieDrillParent(null)}>
+                      返回全览
+                    </Button>
+                    <Text strong style={{ fontSize: 14 }}>{pieDrillParent.name}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>— 二级分类占比</Text>
+                  </>
+                ) : (
+                  <Text type="secondary" style={{ fontSize: 12 }}>点击一级分类查看二级分类占比</Text>
+                )}
+              </Space>
+              <ReactECharts
+                option={pieOption}
+                onEvents={onPieEvents}
+                style={{ height: 500 }}
+                notMerge
+              />
+            </div>
           ) : (
             <Empty description="暂无数据" style={{ padding: 60 }} />
           )}
@@ -343,7 +472,7 @@ export default function StatisticsPage() {
       </Space>
 
       <Card>
-        <Tabs items={tabItems} size="large" />
+        <Tabs items={tabItems} size="large" activeKey={activeTab} onChange={setActiveTab} />
       </Card>
     </div>
   );
