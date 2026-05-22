@@ -4,8 +4,9 @@ import {
 } from 'antd';
 import type { TablePaginationConfig } from 'antd';
 import type { ColumnsType, SorterResult } from 'antd/es/table/interface';
-import { SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { SearchOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { spendingApi, categoryApi, type Spending, type Category } from '../services/api';
 
 const { RangePicker } = DatePicker;
@@ -15,6 +16,17 @@ const DEFAULT_SORT_BY = 'spend_date';
 const DEFAULT_SORT_ORDER: SortOrder = 'desc';
 
 export default function RecordsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const initialCategoryId = searchParams.get('category_id');
+  const initialStartDate = searchParams.get('start_date');
+  const initialEndDate = searchParams.get('end_date');
+  // Snapshot the navigation state so it survives the URL-cleanup effect below
+  const navState = location.state as { from?: string; year?: number; month?: number; parent?: string | null } | null;
+  const [fromStatistics] = useState(navState?.from === 'statistics');
+  const [statsSnapshot] = useState(navState);
+
   const [data, setData] = useState<Spending[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -22,10 +34,22 @@ export default function RecordsPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [keyword, setKeyword] = useState('');
-  const [categoryId, setCategoryId] = useState<number | undefined>();
-  const [dateRange, setDateRange] = useState<[string, string] | null>(null);
+  const [categoryId, setCategoryId] = useState<number | undefined>(
+    initialCategoryId ? Number(initialCategoryId) : undefined
+  );
+  const [dateRange, setDateRange] = useState<[string, string] | null>(
+    initialStartDate && initialEndDate ? [initialStartDate, initialEndDate] : null
+  );
   const [sortBy, setSortBy] = useState<string>(DEFAULT_SORT_BY);
   const [sortOrder, setSortOrder] = useState<SortOrder>(DEFAULT_SORT_ORDER);
+
+  // Clear URL params after consuming them so subsequent user filter changes won't re-trigger the initial state
+  useEffect(() => {
+    if (initialCategoryId || initialStartDate || initialEndDate) {
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [editModal, setEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Spending | null>(null);
   const [editForm] = Form.useForm();
@@ -162,18 +186,36 @@ export default function RecordsPage() {
   };
 
   return (
-    <Card title="账目列表">
+    <Card title={(
+      <Space>
+        {fromStatistics && (
+          <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => {
+            navigate('/statistics', {
+              state: {
+                year: statsSnapshot?.year,
+                month: statsSnapshot?.month,
+                parent: statsSnapshot?.parent,
+              },
+            });
+          }}>返回统计图</Button>
+        )}
+        <span>账目列表</span>
+      </Space>
+    )}>
       <Space wrap style={{ marginBottom: 16 }}>
         <Input placeholder="搜索品名" prefix={<SearchOutlined />} allowClear
           style={{ width: 200 }} onPressEnter={(e: any) => { setKeyword(e.target.value); setPage(1); }}
           onChange={(e) => { if (!e.target.value) { setKeyword(''); setPage(1); } }} />
         <Select placeholder="筛选分类" allowClear style={{ width: 160 }}
+          value={categoryId}
           options={categories.map((c) => ({ value: c.id, label: c.name }))}
           onChange={(val) => { setCategoryId(val); setPage(1); }} />
-        <RangePicker onChange={(_, dateStrings) => {
-          setDateRange(dateStrings[0] ? [dateStrings[0], dateStrings[1]] : null);
-          setPage(1);
-        }} />
+        <RangePicker
+          value={dateRange ? [dayjs(dateRange[0]), dayjs(dateRange[1])] : null}
+          onChange={(_, dateStrings) => {
+            setDateRange(dateStrings[0] ? [dateStrings[0], dateStrings[1]] : null);
+            setPage(1);
+          }} />
       </Space>
 
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading}
